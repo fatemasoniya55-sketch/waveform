@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Signal Encoding Waveform Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 18px;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            letter-spacing: 2px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        /* New info panel for voltage level explanation */
+        .voltage-info {
+            background: #eef2fc;
+            border-left: 5px solid #3498db;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #1e4663;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .voltage-info .info-icon {
+            font-size: 1.6rem;
+            background: #3498db20;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .voltage-info .info-text {
+            flex: 1;
+            line-height: 1.4;
+        }
+        .voltage-info .info-text strong {
+            color: #1a5276;
+        }
+        .voltage-info .level-badge {
+            display: inline-flex;
+            gap: 15px;
+            margin-top: 6px;
+            font-family: monospace;
+            font-weight: 500;
+        }
+        .level-badge span {
+            background: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            box-shadow: inset 0 0 0 1px #cbd5e1, 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+        }
+        .chart-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        .chart-box h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #34495e;
+            font-size: 1.2rem;
+        }
+        @media (max-width: 680px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            .voltage-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Digital Signal Encoding Waveform Generator</h1>
+    
+    <div class="controls">
+        <label for="bitStream" style="font-size: 18px; align-self: center;"><strong>Enter Bit Sequence:</strong></label>
+        <input type="text" id="bitStream" value="01101101010" onkeypress="return event.charCode >= 48 && event.charCode <= 49">
+        <button onclick="generateAllCharts()">Generate Waveforms</button>
+    </div>
+
+    <!-- ✅ NEW: Clear explanation of +V, 0, -V voltage levels (improves understanding without altering existing features) -->
+    <div class="voltage-info">
+        <div class="info-icon">⚡</div>
+        <div class="info-text">
+            <strong>📊 Understanding signal levels: +V , 0 , –V</strong><br>
+            All waveforms display normalized voltage levels. 
+            <strong>“+V”</strong> represents a positive voltage (e.g., +5V or +3.3V), 
+            <strong>“0”</strong> represents zero volts (ground), 
+            <strong>“–V”</strong> represents a negative voltage (e.g., –5V).  
+            Different encoding schemes use these levels to represent binary 0 and 1 — unipolar schemes use only +V and 0, polar/bipolar schemes use +V, 0 and –V.
+            <div class="level-badge">
+                <span style="color:#2c6e2c;">🔴 +V = Positive voltage</span>
+                <span style="color:#555;">⚫ 0 = Zero volts (ground)</span>
+                <span style="color:#b13b3b;">🔵 –V = Negative voltage</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-container" id="chartsContainer">
+        <!-- Canvas elements will be injected here by JS -->
+    </div>
+
+    <script>
+        // Define the line coding schemes requested (preserved exactly as original)
+        const schemes = [
+            { id: 'nrz_unipolar', name: 'NRZ - Unipolar' },
+            { id: 'nrz_l', name: 'NRZ - L (Polar)' },
+            { id: 'nrz_i', name: 'NRZ - I (Invert on 1)' },
+            { id: 'rz_unipolar', name: 'RZ - Unipolar' },
+            { id: 'rz_polar', name: 'RZ - Polar' },
+            { id: 'rz_bipolar', name: 'RZ - Bipolar' },
+            { id: 'ami', name: 'Bipolar - AMI' },
+            { id: 'pseudoternary', name: 'Pseudoternary' },
+            { id: 'manchester', name: 'Manchester (IEEE 802.3)' },
+            { id: 'diff_manchester', name: 'Differential Manchester' },
+            { id: 'mlt_3', name: 'MLT-3' }
+        ];
+
+        let chartInstances = {};
+
+        // Encoding Logic (unchanged to preserve original behavior)
+        function encodeBits(bits, schemeId) {
+            let signal = [];
+            let prevLevel = 1; // Default start level for diff manchester/NRZ-I
+            let lastNonZero = -1; // For AMI, Pseudoternary, MLT-3
+            let mltLevel = 0; 
+
+            for (let i = 0; i < bits.length; i++) {
+                let bit = bits[i];
+                let v1, v2; // First half of bit, Second half of bit
+
+                switch(schemeId) {
+                    case 'nrz_unipolar':
+                        v1 = v2 = bit === '1' ? 1 : 0;
+                        break;
+                    case 'nrz_l':
+                        // Assuming 0 = High (+1), 1 = Low (-1) standard RS232
+                        v1 = v2 = bit === '1' ? -1 : 1;
+                        break;
+                    case 'nrz_i':
+                        if (bit === '1') prevLevel = prevLevel === 1 ? -1 : 1;
+                        v1 = v2 = prevLevel;
+                        break;
+                    case 'rz_unipolar':
+                        v1 = bit === '1' ? 1 : 0;
+                        v2 = 0;
+                        break;
+                    case 'rz_polar':
+                        v1 = bit === '1' ? 1 : -1;
+                        v2 = 0;
+                        break;
+                    case 'rz_bipolar':
+                        if (bit === '1') {
+                            lastNonZero = lastNonZero === 1 ? -1 : 1;
+                            v1 = lastNonZero;
+                        } else {
+                            v1 = 0;
+                        }
+                        v2 = 0;
+                        break;
+                    case 'ami':
+                        if (bit === '1') {
+                            lastNonZero = lastNonZero === 1 ? -1 : 1;
+                            v1 = v2 = lastNonZero;
+                        } else {
+                            v1 = v2 = 0;
+                        }
+                        break;
+                    case 'pseudoternary':
+                        if (bit === '0') {
+                            lastNonZero = lastNonZero === 1 ? -1 : 1;
+                            v1 = v2 = lastNonZero;
+                        } else {
+                            v1 = v2 = 0;
+                        }
+                        break;
+                    case 'manchester':
+                        // IEEE 802.3: 0 = High to Low, 1 = Low to High
+                        v1 = bit === '1' ? -1 : 1;
+                        v2 = bit === '1' ? 1 : -1;
+                        break;
+                    case 'diff_manchester':
+                        // 0 = Transition at start, 1 = No transition at start
+                        if (bit === '0') v1 = prevLevel === 1 ? -1 : 1;
+                        else v1 = prevLevel;
+                        v2 = v1 === 1 ? -1 : 1; // Always transition in middle
+                        prevLevel = v2;
+                        break;
+                    case 'mlt_3':
+                        // Transitions on 1s through sequence 0, 1, 0, -1
+                        if (bit === '1') {
+                            if (mltLevel !== 0) {
+                                mltLevel = 0;
+                            } else {
+                                mltLevel = lastNonZero === 1 ? -1 : 1;
+                                lastNonZero = mltLevel;
+                            }
+                        }
+                        v1 = v2 = mltLevel;
+                        break;
+                }
+                signal.push(v1, v2);
+            }
+            signal.push(signal[signal.length - 1]); // Complete the final step
+            return signal;
+        }
+
+        function createChart(canvasId, title, labels, data) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            if(chartInstances[canvasId]) {
+                chartInstances[canvasId].destroy();
+            }
+
+            chartInstances[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: title,
+                        data: data,
+                        borderColor: '#e74c3c',
+                        borderWidth: 3,
+                        stepped: true,
+                        pointRadius: 0, // hide dots
+                        fill: false,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let val = context.raw;
+                                    if (val === 1) return 'Voltage: +V';
+                                    if (val === 0) return 'Voltage: 0 V (ground)';
+                                    if (val === -1) return 'Voltage: –V';
+                                    return `Level: ${val}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: -1.5,
+                            max: 1.5,
+                            title: {
+                                display: true,
+                                text: 'Signal Level',
+                                color: '#2c3e50',
+                                font: { weight: 'bold', size: 12 }
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    if(value === 1) return '+V';
+                                    if(value === 0) return '0';
+                                    if(value === -1) return '-V';
+                                    return '';
+                                },
+                                font: { size: 12, weight: '500' }
+                            },
+                            grid: { color: '#ccc' }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Bit interval (bit value shown at start)',
+                                color: '#2c3e50',
+                                font: { size: 11 }
+                            },
+                            grid: {
+                                color: (ctx) => {
+                                    // Make bit boundary lines darker, mid-bit lines lighter
+                                    return ctx.index % 2 === 0 ? '#aaa' : '#eaeaea';
+                                }
+                            },
+                            ticks: {
+                                color: '#2c3e50',
+                                font: { size: 13, weight: 'bold' },
+                                autoSkip: false,
+                                maxRotation: 0,
+                                minRotation: 0
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        function generateAllCharts() {
+            const bitStream = document.getElementById('bitStream').value;
+            if(!bitStream) return alert("Please enter a bit sequence!");
+            
+            // Validate only binary characters
+            if(!/^[01]+$/.test(bitStream)) {
+                alert("Bit sequence must contain only 0s and 1s.");
+                return;
+            }
+
+            // Prepare labels for X axis (e.g. "0", "", "1", "", ...)
+            let labels = [];
+            for (let i = 0; i < bitStream.length; i++) {
+                labels.push(bitStream[i]);
+                labels.push(""); // Middle of the bit period
+            }
+            labels.push(""); // End point
+
+            const container = document.getElementById('chartsContainer');
+            container.innerHTML = ''; // Clear existing canvases
+
+            schemes.forEach((scheme) => {
+                // Create DOM elements
+                const box = document.createElement('div');
+                box.className = 'chart-box';
+                const heading = document.createElement('h3');
+                heading.innerText = scheme.name;
+                const canvasContainer = document.createElement('div');
+                canvasContainer.style.height = '200px';
+                const canvas = document.createElement('canvas');
+                canvas.id = 'chart_' + scheme.id;
+                
+                canvasContainer.appendChild(canvas);
+                box.appendChild(heading);
+                box.appendChild(canvasContainer);
+                container.appendChild(box);
+
+                // Generate Data and Draw Chart
+                const data = encodeBits(bitStream, scheme.id);
+                createChart(canvas.id, scheme.name, labels, data);
+            });
+        }
+
+        // Initialize on page load
+        window.onload = generateAllCharts;
+    </script>
+</body>
+</html>

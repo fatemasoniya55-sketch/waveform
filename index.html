@@ -2,169 +2,238 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Signal Encoding Waveform Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Digital Signal Encoding Waveform Generator | Desktop-Classic Layout</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f7f6;
             color: #333;
             margin: 0;
             padding: 20px;
+            /* 🔒 DESKTOP LOCK: force minimum width and horizontal scroll if needed */
+            min-width: 1200px;
+            overflow-x: auto;
         }
+
         h1 {
             text-align: center;
             color: #2c3e50;
+            white-space: nowrap;
         }
+
+        /* Desktop-first control panel — keep horizontal, no stacking */
         .controls {
             display: flex;
             justify-content: center;
+            align-items: center;
             margin-bottom: 20px;
-            gap: 10px;
+            gap: 20px;
             background: white;
-            padding: 20px;
+            padding: 20px 28px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            min-width: 800px;
         }
+
         input[type="text"] {
-            padding: 10px;
+            padding: 12px 16px;
             font-size: 18px;
-            width: 300px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            width: 340px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
             letter-spacing: 2px;
+            font-family: monospace;
+            font-weight: 600;
+            background: #fef9e8;
         }
+
         button {
-            padding: 10px 20px;
+            padding: 12px 28px;
             font-size: 16px;
-            background-color: #3498db;
+            font-weight: bold;
+            background-color: #2c3e50;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 40px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: background 0.2s, transform 0.05s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
         button:hover {
-            background-color: #2980b9;
+            background-color: #1a2632;
+            transform: scale(0.98);
         }
-        /* New info panel for voltage level explanation */
+
+        /* Voltage info panel – desktop oriented */
         .voltage-info {
             background: #eef2fc;
-            border-left: 5px solid #3498db;
-            padding: 12px 20px;
-            margin-bottom: 25px;
-            border-radius: 8px;
+            border-left: 6px solid #2c3e50;
+            padding: 14px 24px;
+            margin-bottom: 28px;
+            border-radius: 12px;
             font-size: 0.95rem;
             color: #1e4663;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
+            flex-wrap: nowrap;
+            gap: 18px;
+            min-width: 1000px;
         }
+
         .voltage-info .info-icon {
-            font-size: 1.6rem;
-            background: #3498db20;
-            width: 36px;
-            height: 36px;
+            font-size: 2rem;
+            background: #2c3e5020;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            color: #2980b9;
+            color: #1f3b4c;
         }
+
         .voltage-info .info-text {
             flex: 1;
-            line-height: 1.4;
+            line-height: 1.45;
         }
+
         .voltage-info .info-text strong {
-            color: #1a5276;
+            color: #0b2b40;
         }
-        .voltage-info .level-badge {
+
+        .level-badge {
             display: inline-flex;
-            gap: 15px;
+            gap: 20px;
             margin-top: 6px;
             font-family: monospace;
-            font-weight: 500;
+            font-weight: 600;
         }
+
         .level-badge span {
             background: white;
-            padding: 4px 10px;
-            border-radius: 20px;
+            padding: 5px 14px;
+            border-radius: 30px;
             font-size: 0.85rem;
-            box-shadow: inset 0 0 0 1px #cbd5e1, 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: inset 0 0 0 1px #cbd5e1, 0 1px 3px rgba(0,0,0,0.05);
         }
+
+        /* 🔒 DESKTOP GRID: always two columns, no mobile stacking */
         .charts-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 15px;
+            min-width: 1100px;
         }
+
         .chart-box {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: all 0.2s;
+            padding: 18px 20px 20px 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+            min-width: 0;    /* allows flex/grid child to shrink properly */
         }
+
         .chart-box h3 {
             margin-top: 0;
+            margin-bottom: 16px;
             text-align: center;
-            color: #34495e;
-            font-size: 1.2rem;
+            color: #1f4e6e;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            border-bottom: 2px solid #e9ecef;
+            display: inline-block;
+            width: auto;
+            padding-bottom: 6px;
         }
-        @media (max-width: 680px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
-            .controls {
-                flex-direction: column;
-                align-items: center;
+
+        /* Ensure each canvas container has consistent height */
+        .chart-box div {
+            width: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* extra touch: desktop tooltip polish */
+        .controls label {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f4e6e;
+        }
+
+        /* minor responsive edge: even at extreme zoom, maintain desktop grid */
+        @media (max-width: 1199px) {
+            body {
+                min-width: 1200px;
             }
             .voltage-info {
-                flex-direction: column;
-                align-items: flex-start;
+                min-width: 1100px;
             }
+            .charts-container {
+                min-width: 1100px;
+            }
+        }
+
+        /* force crisp font rendering */
+        .chart-box canvas {
+            border-radius: 12px;
         }
     </style>
 </head>
 <body>
 
-    <h1>Digital Signal Encoding Waveform Generator</h1>
+    <h1>📡 Digital Signal Encoding Waveform Generator</h1>
     
     <div class="controls">
-        <label for="bitStream" style="font-size: 18px; align-self: center;"><strong>Enter Bit Sequence:</strong></label>
+        <label for="bitStream"><strong>🔢 Bit Sequence:</strong></label>
         <input type="text" id="bitStream" value="01101101010" onkeypress="return event.charCode >= 48 && event.charCode <= 49">
-        <button onclick="generateAllCharts()">Generate Waveforms</button>
+        <button onclick="generateAllCharts()">⚡ Generate Waveforms</button>
     </div>
 
-    <!-- ✅ NEW: Clear explanation of +V, 0, -V voltage levels (improves understanding without altering existing features) -->
+    <!-- Voltage Level Explanation (desktop friendly) -->
     <div class="voltage-info">
-        <div class="info-icon">⚡</div>
+        <div class="info-icon">⚡📊</div>
         <div class="info-text">
-            <strong>📊 Understanding signal levels: +V , 0 , –V</strong><br>
-            All waveforms display normalized voltage levels. 
-            <strong>“+V”</strong> represents a positive voltage (e.g., +5V or +3.3V), 
-            <strong>“0”</strong> represents zero volts (ground), 
-            <strong>“–V”</strong> represents a negative voltage (e.g., –5V).  
-            Different encoding schemes use these levels to represent binary 0 and 1 — unipolar schemes use only +V and 0, polar/bipolar schemes use +V, 0 and –V.
+            <strong>🔌 Signal voltage definition: +V , 0 , –V</strong><br>
+            All waveforms display normalized levels: <strong>“+V”</strong> = positive voltage (e.g., +5V), 
+            <strong>“0”</strong> = zero volts (ground), <strong>“–V”</strong> = negative voltage (e.g., –5V).  
+            Encoding schemes use these to represent binary 0/1 — unipolar uses +V/0, polar/bipolar uses all three.
             <div class="level-badge">
-                <span style="color:#2c6e2c;">🔴 +V = Positive voltage</span>
-                <span style="color:#555;">⚫ 0 = Zero volts (ground)</span>
-                <span style="color:#b13b3b;">🔵 –V = Negative voltage</span>
+                <span style="color:#c0392b;">🔴 +V &nbsp; High</span>
+                <span style="color:#2c6e2c;">⚫ 0 &nbsp; Ground</span>
+                <span style="color:#2980b9;">🔵 –V &nbsp; Negative</span>
             </div>
         </div>
     </div>
 
     <div class="charts-container" id="chartsContainer">
-        <!-- Canvas elements will be injected here by JS -->
+        <!-- dynamic chart canvases injected here -->
     </div>
-    <footer> this web app is created by kalam's code. education purpose only.</footer>
+
+    <div>
+        <footer>
+            this is a webapp created by kalam's code. educational purpose only
+        </footer>
+    </div>
 
     <script>
-        // Define the line coding schemes requested (preserved exactly as original)
+        // 11 encoding schemes (preserved original logic)
         const schemes = [
             { id: 'nrz_unipolar', name: 'NRZ - Unipolar' },
             { id: 'nrz_l', name: 'NRZ - L (Polar)' },
@@ -181,23 +250,23 @@
 
         let chartInstances = {};
 
-        // Encoding Logic (unchanged to preserve original behavior)
+        // ========== ENCODING LOGIC (exactly original, unchanged) ==========
         function encodeBits(bits, schemeId) {
             let signal = [];
-            let prevLevel = 1; // Default start level for diff manchester/NRZ-I
-            let lastNonZero = -1; // For AMI, Pseudoternary, MLT-3
-            let mltLevel = 0; 
+            let prevLevel = 1;          // for NRZ-I / Differential Manchester
+            let lastNonZero = -1;       // for AMI, Pseudoternary, MLT-3
+            let mltLevel = 0;            // MLT-3 state machine
 
             for (let i = 0; i < bits.length; i++) {
                 let bit = bits[i];
-                let v1, v2; // First half of bit, Second half of bit
+                let v1, v2;  // first half, second half of bit period
 
                 switch(schemeId) {
                     case 'nrz_unipolar':
                         v1 = v2 = bit === '1' ? 1 : 0;
                         break;
                     case 'nrz_l':
-                        // Assuming 0 = High (+1), 1 = Low (-1) standard RS232
+                        // RS232 style: 0 = High (+1), 1 = Low (-1)
                         v1 = v2 = bit === '1' ? -1 : 1;
                         break;
                     case 'nrz_i':
@@ -238,19 +307,19 @@
                         }
                         break;
                     case 'manchester':
-                        // IEEE 802.3: 0 = High to Low, 1 = Low to High
+                        // IEEE 802.3: 1 = Low-to-High transition, 0 = High-to-Low
                         v1 = bit === '1' ? -1 : 1;
                         v2 = bit === '1' ? 1 : -1;
                         break;
                     case 'diff_manchester':
-                        // 0 = Transition at start, 1 = No transition at start
+                        // 0 = transition at start, 1 = no transition at start
                         if (bit === '0') v1 = prevLevel === 1 ? -1 : 1;
                         else v1 = prevLevel;
-                        v2 = v1 === 1 ? -1 : 1; // Always transition in middle
+                        v2 = v1 === 1 ? -1 : 1;   // middle transition always
                         prevLevel = v2;
                         break;
                     case 'mlt_3':
-                        // Transitions on 1s through sequence 0, 1, 0, -1
+                        // Transition on '1': cycles through 0 → +1 → 0 → -1 → 0 ...
                         if (bit === '1') {
                             if (mltLevel !== 0) {
                                 mltLevel = 0;
@@ -261,16 +330,17 @@
                         }
                         v1 = v2 = mltLevel;
                         break;
+                    default: v1 = v2 = 0;
                 }
                 signal.push(v1, v2);
             }
-            signal.push(signal[signal.length - 1]); // Complete the final step
+            signal.push(signal[signal.length - 1]); // hold final level
             return signal;
         }
 
+        // Chart.js rendering (enhanced with stepped line)
         function createChart(canvasId, title, labels, data) {
             const ctx = document.getElementById(canvasId).getContext('2d');
-            
             if(chartInstances[canvasId]) {
                 chartInstances[canvasId].destroy();
             }
@@ -282,26 +352,29 @@
                     datasets: [{
                         label: title,
                         data: data,
-                        borderColor: '#e74c3c',
+                        borderColor: '#e63946',
                         borderWidth: 3,
                         stepped: true,
-                        pointRadius: 0, // hide dots
+                        pointRadius: 0,
                         fill: false,
-                        tension: 0
+                        tension: 0,
+                        segment: {
+                            borderDash: ctx => [0, 0]
+                        }
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     let val = context.raw;
-                                    if (val === 1) return 'Voltage: +V';
-                                    if (val === 0) return 'Voltage: 0 V (ground)';
-                                    if (val === -1) return 'Voltage: –V';
+                                    if (val === 1) return '🔴 +V  (Positive voltage)';
+                                    if (val === 0) return '⚫ 0 V  (Ground)';
+                                    if (val === -1) return '🔵 –V  (Negative voltage)';
                                     return `Level: ${val}`;
                                 }
                             }
@@ -313,7 +386,7 @@
                             max: 1.5,
                             title: {
                                 display: true,
-                                text: 'Signal Level',
+                                text: 'Signal Level (Voltage)',
                                 color: '#2c3e50',
                                 font: { weight: 'bold', size: 12 }
                             },
@@ -325,85 +398,107 @@
                                     if(value === -1) return '-V';
                                     return '';
                                 },
-                                font: { size: 12, weight: '500' }
+                                font: { size: 11, weight: '500' }
                             },
-                            grid: { color: '#ccc' }
+                            grid: { color: '#d4dcec' }
                         },
                         x: {
                             title: {
                                 display: true,
-                                text: 'Bit interval (bit value shown at start)',
+                                text: 'Bit interval (bit label shown at start)',
                                 color: '#2c3e50',
                                 font: { size: 11 }
                             },
                             grid: {
                                 color: (ctx) => {
-                                    // Make bit boundary lines darker, mid-bit lines lighter
-                                    return ctx.index % 2 === 0 ? '#aaa' : '#eaeaea';
+                                    // mark bit boundaries darker
+                                    return ctx.index % 2 === 0 ? '#9aaec2' : '#e2e8f0';
                                 }
                             },
                             ticks: {
-                                color: '#2c3e50',
-                                font: { size: 13, weight: 'bold' },
+                                color: '#1e4663',
+                                font: { size: 12, weight: 'bold' },
                                 autoSkip: false,
                                 maxRotation: 0,
                                 minRotation: 0
                             }
                         }
                     },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    }
+                    interaction: { mode: 'index', intersect: false }
                 }
             });
         }
 
+        // Core generation: inject canvases, build charts
         function generateAllCharts() {
             const bitStream = document.getElementById('bitStream').value;
-            if(!bitStream) return alert("Please enter a bit sequence!");
-            
-            // Validate only binary characters
+            if(!bitStream) {
+                alert("⚠️ Please enter a binary sequence (0s and 1s)");
+                return;
+            }
             if(!/^[01]+$/.test(bitStream)) {
-                alert("Bit sequence must contain only 0s and 1s.");
+                alert("❌ Invalid bit sequence! Only digits 0 and 1 allowed.");
                 return;
             }
 
-            // Prepare labels for X axis (e.g. "0", "", "1", "", ...)
+            // Build X-axis labels: each bit gets a label, then mid-bit empty label, final extra empty
             let labels = [];
             for (let i = 0; i < bitStream.length; i++) {
                 labels.push(bitStream[i]);
-                labels.push(""); // Middle of the bit period
+                labels.push("");   // middle of bit period
             }
-            labels.push(""); // End point
+            labels.push("");       // trailing edge
 
             const container = document.getElementById('chartsContainer');
-            container.innerHTML = ''; // Clear existing canvases
+            container.innerHTML = '';   // clear old charts
 
+            // Loop through all schemes, create canvas elements and render
             schemes.forEach((scheme) => {
-                // Create DOM elements
                 const box = document.createElement('div');
                 box.className = 'chart-box';
+                
                 const heading = document.createElement('h3');
                 heading.innerText = scheme.name;
+                
                 const canvasContainer = document.createElement('div');
-                canvasContainer.style.height = '200px';
+                canvasContainer.style.height = '210px';
+                canvasContainer.style.width = '100%';
+                canvasContainer.style.position = 'relative';
+                
                 const canvas = document.createElement('canvas');
                 canvas.id = 'chart_' + scheme.id;
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
                 
                 canvasContainer.appendChild(canvas);
                 box.appendChild(heading);
                 box.appendChild(canvasContainer);
                 container.appendChild(box);
-
-                // Generate Data and Draw Chart
-                const data = encodeBits(bitStream, scheme.id);
-                createChart(canvas.id, scheme.name, labels, data);
+                
+                // Encode bits for this scheme
+                const signalData = encodeBits(bitStream, scheme.id);
+                createChart(canvas.id, scheme.name, labels, signalData);
             });
         }
 
-        // Initialize on page load
-        window.onload = generateAllCharts;
+        // Force desktop layout even on window resize: reflow charts optionally but no need to redraw all.
+        // However to keep charts crisp if container width changes (rare due to min-width layout), we listen to resize
+        // but only if needed: existing charts already responsive. we keep the layout stable.
+        window.addEventListener('resize', function() {
+            // optional: redraw charts to avoid weird scaling but Chart.js auto-scales on resize
+            for (let id in chartInstances) {
+                if (chartInstances[id] && typeof chartInstances[id].resize === 'function') {
+                    chartInstances[id].resize();
+                }
+            }
+        });
+
+        // Initial load
+        window.onload = () => {
+            generateAllCharts();
+            // add small desktop indicator in console (just a note)
+            console.log('✅ Desktop Mode ACTIVE — forced multi-column layout, horizontal scroll on narrow viewports');
+        };
     </script>
 </body>
 </html>
